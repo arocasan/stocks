@@ -3,7 +3,7 @@ from threading import Lock
 from flask import Flask, render_template, session
 from flask_socketio import SocketIO, emit
 import requests
-
+import json
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
 # the best option based on installed packages.
@@ -14,17 +14,47 @@ socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 thread_lock = Lock()
 
-url = 'https://api.coinbase.com/v2/prices/btc-usd/spot'
+url = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=APE,AMC"
 
-def background_thread():
+headers = {
+    "Accept": "application/json",
+    "User-Agent": "",
+
+}
+
+response = requests.request(
+    "GET",
+    url,
+    headers=headers,
+)
+
+response = response.json()
+sum = 0
+
+print(response)
+print(sum)
+multiple_tickers = response["quoteResponse"]["result"]
+def background_thread(sum_reg=0):
     """Example of how to send server generated events to clients."""
-    count = 0
+    print(multiple_tickers)
     while True:
+
         socketio.sleep(1)
-        count += 1
-        price = ((requests.get(url)).json())['data']['amount']
+        for ticker in multiple_tickers:
+            regular_price = ticker["regularMarketPrice"]
+            ticker_symbol = ticker["symbol"]
+            if ticker_symbol == "AMC":
+                amc_price = regular_price
+            if ticker_symbol ==  "APE":
+                ape_price = regular_price
         socketio.emit('my_response',
-                      {'data': 'Bitcoin current price (USD): ' + price, 'count': count})
+                      {'amc_price': amc_price,
+                       'ape_price': ape_price,
+                       'pooop': "poop"})
+
+        print(amc_price+ape_price)
+        print(f"AMC price {amc_price}")
+        print(f"APE price {ape_price}")
 
 @app.route('/')
 def index():
@@ -56,5 +86,5 @@ def connect():
             thread = socketio.start_background_task(background_thread)
     emit('my_response', {'data': 'Connected', 'count': 0})
 
-if __name__ == '__main__':
+if __name__ == '__app__':
     socketio.run(app)
