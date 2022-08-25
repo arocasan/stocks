@@ -141,5 +141,5 @@ def connect():
             thread = socketio.start_background_task(background_thread)
     emit('my_response', {'data': 'Connected', 'count': 0})
 
-if __name__ == '__app__':
+if __name__ == '__main__':
     socketio.run(app)
