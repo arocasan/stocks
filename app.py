@@ -14,7 +14,9 @@ socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 thread_lock = Lock()
 
-url = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=APE,AMC"
+symbols = "AMC,APE"
+
+url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={symbols}"
 
 headers = {
     "Accept": "application/json",
@@ -29,54 +31,107 @@ response = requests.request(
 )
 
 response = response.json()
-sum = 0
 
-print(response)
-print(sum)
 multiple_tickers = response["quoteResponse"]["result"]
-def background_thread(sum_reg=0):
-    """Example of how to send server generated events to clients."""
-    print(multiple_tickers)
-    while True:
+def background_thread():
 
+    while True:
         socketio.sleep(1)
         for ticker in multiple_tickers:
             regular_price = ticker["regularMarketPrice"]
             ticker_symbol = ticker["symbol"]
             if ticker_symbol == "AMC":
+                amc_symbol = "AMC"
                 amc_price = regular_price
-            if ticker_symbol ==  "APE":
+            if ticker_symbol == "APE":
+                ape_symbol = "APE"
                 ape_price = regular_price
-        socketio.emit('my_response',
-                      {'amc_price': amc_price,
-                       'ape_price': ape_price,
-                       'pooop': "poop"})
 
-        print(amc_price+ape_price)
-        print(f"AMC price {amc_price}")
-        print(f"APE price {ape_price}")
+
+        reg_sum = ape_price + amc_price
+        print("{:.3f}".format(reg_sum))
+        formatted_sum = "{:.3f}".format(reg_sum)
+        print(f"Formatted reg sum {formatted_sum}")
+        print(f"Raw regular sum:{amc_price+ape_price}")
+        print(f"AMC price {amc_price}$USD")
+        print(f"APE price {ape_price}$USD")
+        socketio.emit('regular_market',
+                      {'amc_symbol': f"${amc_symbol}", 'ape_symbol': f"${ape_symbol}",
+                       'amc_price': amc_price, 'ape_price': ape_price
+                       })
+
+        socketio.sleep(1)
+        for ticker in multiple_tickers:
+            try:
+                post_price = ticker["postMarketPrice"]
+            except:
+                post_price = ticker["regularMarketPreviousClose"]
+                ticker_symbol = ticker["symbol"]
+                if ticker_symbol == "AMC":
+                    amc_symbol = "AMC"
+                    amc_post_price = post_price
+                if ticker_symbol == "APE":
+                    ape_symbol = "APE"
+                    ape_post_price = post_price
+            else:
+                ticker_symbol = ticker["symbol"]
+            if ticker_symbol == "AMC":
+                amc_symbol = "AMC"
+                amc_post_price = post_price
+            if ticker_symbol == "APE":
+                ape_symbol = "APE"
+                ape_post_price = post_price
+
+        post_sum = ape_post_price + amc_post_price
+        print("{:.3f}".format(post_sum))
+        formatted_post_sum = "{:.3f}".format(post_sum)
+        print(f"Formatted post sum{formatted_post_sum}")
+        print(f"RAW post sum:{amc_post_price + ape_post_price}")
+        print(f"AMC post price {amc_post_price}$USD")
+        print(f"APE post price {ape_post_price}$USD")
+        socketio.emit('post_market',
+                      {'amc_symbol': f"${amc_symbol}", 'ape_symbol': f"${ape_symbol}",
+                       'amc_price': amc_post_price, 'ape_price': ape_post_price
+                       })
+
+        socketio.sleep(1)
+        for ticker in multiple_tickers:
+            try:
+                pre_price = ticker["preMarketPrice"]
+            except:
+                pre_price = ticker["regularMarketPreviousClose"]
+                ticker_symbol = ticker["symbol"]
+                if ticker_symbol == "AMC":
+                    amc_symbol = "AMC"
+                    amc_pre_price = pre_price
+                if ticker_symbol == "APE":
+                    ape_symbol = "APE"
+                    ape_pre_price = pre_price
+            else:
+                ticker_symbol = ticker["symbol"]
+                if ticker_symbol == "AMC":
+                    amc_symbol = "AMC"
+                    amc_pre_price = pre_price
+                if ticker_symbol == "APE":
+                    ape_symbol = "APE"
+                    ape_pre_price = pre_price
+
+        pre_sum = ape_pre_price + amc_pre_price
+        print("{:.3f}".format(pre_sum))
+        formatted_pre_sum = "{:.3f}".format(pre_sum)
+        print(f"Formatted pre sum{formatted_pre_sum}")
+        print(f"RAW pre sum:{amc_pre_price+ape_pre_price}")
+        print(f"AMC pre price {amc_pre_price}$USD")
+        print(f"APE pre price {ape_pre_price}$USD")
+        socketio.emit('pre_market',
+                      {'amc_symbol': f"${amc_symbol}", 'ape_symbol': f"${ape_symbol}",
+                       'amc_price': amc_pre_price, 'ape_price': ape_pre_price
+                       })
+
 
 @app.route('/')
 def index():
     return render_template('index.html', async_mode=socketio.async_mode)
-
-@socketio.event
-def my_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']})
-
-# Receive the test request from client and send back a test response
-@socketio.on('test_message')
-def handle_message(data):
-    print('received message: ' + str(data))
-    emit('test_response', {'data': 'Test response sent'})
-
-# Broadcast a message to all clients
-@socketio.on('broadcast_message')
-def handle_broadcast(data):
-    print('received: ' + str(data))
-    emit('broadcast_response', {'data': 'Broadcast sent'}, broadcast=True)
 
 @socketio.event
 def connect():
