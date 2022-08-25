@@ -1,0 +1,16 @@
+ @font-face{
+ font-family: 'AMC Theaters Regular';
+ src: url('AMC Theaters.woff');
+ font-style: normal;
+ font-weight: normal;
+ }
+
+ h1 {
+font-family: 'AMC Theaters Regular';
+ font-style: normal;
+ font-weight: normal;
+ font-size: 150px;
+ text-align: center;
+ color: #e51838;
+
+}
