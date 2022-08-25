@@ -11,6 +11,7 @@
             //     http[s]://<domain>:<port>[/<namespace>]
             var socket = io();
 
+
             // Event handler for new connections.
             // The callback function is invoked when a connection with the
             // server is established.
@@ -44,7 +45,7 @@
 
             socket.on('post_market', function(msg, cb) {
                 $('#fade_amc').text( $('<div/>').text('After:' + msg.amc_symbol + ': ' + msg.amc_price).html()).fadeIn(5000);
-                $('#fade_ape').text( $('<div/>').text('After:' + msg.ape_symbol + ': ' + msg.ape_price).html()).fadeIn(3000);
+                $('#fade_ape').text( $('<div/>').text('After:' + msg.ape_symbol + ': ' + msg.ape_price).html()).fadeIn(1000);
                 if (cb)
                     cb();
             });
@@ -52,8 +53,12 @@
         });
     </script>
 
-<div id="mast"><h1>AMC + APE</h1></div>
-    <div id="fade_ape"></div>
+
+
+
+
+<div class="mast"><h1>AMC + APE</h1></div>
+<div id="fade_ape"></div>
     <div id="fade_amc"></div>
     <div id="pre_sum"></div>
     <div id="pre_amc"></div>
