@@ -14,28 +14,29 @@ socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 thread_lock = Lock()
 
-symbols = "AMC,APE"
 
-url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={symbols}"
-
-headers = {
-    "Accept": "application/json",
-    "User-Agent": "",
-
-}
-
-response = requests.request(
-    "GET",
-    url,
-    headers=headers,
-)
-
-response = response.json()
-
-multiple_tickers = response["quoteResponse"]["result"]
 def background_thread():
 
     while True:
+        symbols = "AMC,APE"
+
+        url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={symbols}"
+
+        headers = {
+            "Accept": "application/json",
+            "User-Agent": "",
+
+        }
+
+        response = requests.request(
+            "GET",
+            url,
+            headers=headers,
+        )
+
+        response = response.json()
+
+        multiple_tickers = response["quoteResponse"]["result"]
         socketio.sleep(1)
         for ticker in multiple_tickers:
             regular_price = ticker["regularMarketPrice"]
@@ -133,13 +134,18 @@ def background_thread():
 def index():
     return render_template('index.html', async_mode=socketio.async_mode)
 
+@socketio.on('broadcast_message')
+def handle_broadcast(data):
+    print('received: ' + str(data))
+    emit('broadcast_response', {'data': 'Broadcast sent'}, broadcast=True)
+
 @socketio.event
 def connect():
     global thread
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(background_thread)
-    emit('my_response', {'data': 'Connected', 'count': 0})
+    emit('regular_market', {'data': 'Connected', 'count': 0})
 
 if __name__ == '__main__':
     socketio.run(app)
